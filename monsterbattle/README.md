@@ -51,9 +51,8 @@ When playing the game, you will name your character and one of the three mele cl
 ## **To Play The Game**
 - Download the package (monsterbattle folder)
     - run ***npm install cors*** in a node.js editor if just the script.js is downloaded
-- At the bottom of the script.js file insert your desired hero name into the ***playGame('Delaria');*** function leaving the parenthesis and quotes. 
-    - example: playGame('Thor');
-- In the terminal type ***node script.js***
+- In the terminal type ***node script.js YourHeroName***
+    - Example: ***node script.js Delaria***
     - The game will log to the console with each round and an overall winner of the battle. 
 ***************************************************
 ## **How The Game Works**

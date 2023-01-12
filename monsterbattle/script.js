@@ -292,4 +292,4 @@ function playGame(name) {
     }
 };
 
-playGame('Delaria');
+playGame(process.argv[2]);
