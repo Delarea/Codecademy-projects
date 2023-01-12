@@ -1,6 +1,7 @@
 const e = require("cors");
 const { isReadable } = require("stream");
 
+// calculates monster hit points when spawned (calculated only at spawn)
 const getHitPoints = (numberDie, typeDie, modifier) => {
     let hP = 0;
     for(let i = numberDie; i > 0; i--) {
@@ -9,6 +10,7 @@ const getHitPoints = (numberDie, typeDie, modifier) => {
     return (hP + modifier);
 };
 
+// used in objects for heros and monsters to determine the damage for each attack type (calculated every round)
 const getAttackDmg = (numberDie, typeDie, modifier) => {
     let dmg = 0;
     for(let j = numberDie; j > 0; j--) {
@@ -17,15 +19,18 @@ const getAttackDmg = (numberDie, typeDie, modifier) => {
     return (dmg + modifier);
 };
 
+// used in each round to determine whether the attack hits or misses (uses each heroes or monsters proficiency bonus respectively)
 const attackRoll = (bonus) => {
     let roll = Math.floor((Math.random() * 20) + 1);
     return (roll + bonus);
 };
 
+// calculates initiative for hero and monster (who attacks first)
 const initiative = () => {
     let initiativeRoll = Math.floor((Math.random() * 20) + 1);
     return initiativeRoll;
 };
+
 
 const monster = {
     1: {
@@ -133,13 +138,13 @@ function countEntries(obj) {
     return count;
 };
 
-// helper function gets random entry from monsters or heros
+// helper function gets random entry from monsters or heros (determines monster spawned or hero named) returns entry so we can access in game play functions
 function getRandomEntry(obj) {
     let entry = Math.floor((Math.random() * countEntries(obj)) + 1);
     return entry;
 }
 
-// sets a random hero's name to user input - returns number of entry so we know which was selected
+// sets a random hero's name to user input - returns number of entry so we know which was selected in the game play functions
 function setHeroName(name) {
     let randomHero = getRandomEntry(hero);
     hero[randomHero].heroName = name;
@@ -148,12 +153,13 @@ function setHeroName(name) {
 
 
 
-//random number used in determining attack type and damage
+//random number used in determining attack type and damage (either main attack or seconday). This is redone each round in the game. 
 function getRandom() {
     let attack = Math.floor((Math.random() * 2) + 1);
     return attack;
 };
 
+// used the getRandom() in game play functions to determine the attack type (to be able to print to console)
 function getAttackType(obj, weapon) {
     if(weapon === 1) {
         return obj.mainAtkType;
@@ -162,6 +168,7 @@ function getAttackType(obj, weapon) {
     }
 };
 
+// used the getRandom() in game play functions to determine which attack is damaging, set the obj's health, and print the damage to console
 function typeAttackDmg(obj, weapon) {
     if(weapon === 1) {
         return obj.mainAtkDmg;
@@ -170,7 +177,7 @@ function typeAttackDmg(obj, weapon) {
     }
 };
 
-
+// game play if hero rolls higher initiative - gets params from playGame function below
 function heroInitiative(hType, hName, mType, monst) {
     let heroType = hType;
     let heroName = hName;
@@ -182,7 +189,9 @@ function heroInitiative(hType, hName, mType, monst) {
         let weapon = getRandom();
         let heroAtk = getAttackType(hero[heroType], weapon);
         let heroDmg = typeAttackDmg(hero[heroType], weapon);
+        // if statement prevents hero from attacking with <= 0 HP (shouldn't happen if hero goes first)
         if(hero[heroType].hitPoints > 0) {
+            // if statement determines if hero misses or hits
             if(heroAtkRoll >= monster[monsterType].armorClass) {
                 monster[monsterType].health = heroDmg;
                 console.log(`${heroName} hit the ${monsters} for ${heroDmg} hit points with their ${heroAtk}! The ${monsters} has ${monster[monsterType].hitPoints} hit points remaining.`);
@@ -194,15 +203,17 @@ function heroInitiative(hType, hName, mType, monst) {
         let monsterWeapon = getRandom();
         let monsterAtk = getAttackType(monster[monsterType], monsterWeapon);
         let monsterDmg = typeAttackDmg(monster[monsterType], monsterWeapon);
+        // if statement prevents monster from attacking with <= 0 HP (could happen if hero hits and drops monster below 0 before the break;)
         if(monster[monsterType].hitPoints > 0){
+            // if statement determines if monster misses or hits
             if(monsterAtkRoll >= hero[heroType].armorClass) {
                 hero[heroType].health = monsterDmg;
-                console.log(`The ${monsters} hit ${heroName} for ${monsterDmg} hit points with their ${monsterAtk}! ${heroName} has ${hero[heroType].hitPoints} remaining.`);
+                console.log(`The ${monsters} hit ${heroName} for ${monsterDmg} hit points with their ${monsterAtk}! ${heroName} has ${hero[heroType].hitPoints} hit points remaining.`);
             } else {
-                console.log(`The ${monsters} missed ${heroName} with their ${monsterAtk}! ${heroName} still has ${hero[heroType].hitPoints} remaining.`);
+                console.log(`The ${monsters} missed ${heroName} with their ${monsterAtk}! ${heroName} still has ${hero[heroType].hitPoints} hit points remaining.`);
             }
         }
-
+        // if either monster or hero are <= 0 HP a winner is determined and while loop breaks
         if((hero[heroType].hitPoints <= 0) || (monster[monsterType].hitPoints <= 0)) {
             if(hero[heroType].hitPoints > monster[monsterType].hitPoints) {
                 console.log(`${heroName} defeated the ${monsters} and has ${hero[heroType].hitPoints} hit points remaining!`);
@@ -214,6 +225,7 @@ function heroInitiative(hType, hName, mType, monst) {
     }
 };
 
+// game play if monster rolls higher initiative - gets params from playGame function
 function monsterInitiative(hType, hName, mType, monst) {
     let heroType = hType;
     let heroName = hName;
@@ -225,19 +237,23 @@ function monsterInitiative(hType, hName, mType, monst) {
         let monsterWeapon = getRandom();
         let monsterAtk = getAttackType(monster[monsterType], monsterWeapon);
         let monsterDmg = typeAttackDmg(monster[monsterType], monsterWeapon);
+        // if statement that prevents monster from attack with <= 0 HP (not likely since monster is going first in the loop after an if break;)
         if(monster[monsterType].hitPoints > 0){
+            // if statement determines whether monster misses or hits
             if(monsterAtkRoll >= hero[heroType].armorClass) {
                 hero[heroType].health = monsterDmg;
-                console.log(`The ${monsters} hit ${heroName} for ${monsterDmg} hit points with their ${monsterAtk}! ${heroName} has ${hero[heroType].hitPoints} remaining.`);
+                console.log(`The ${monsters} hit ${heroName} for ${monsterDmg} hit points with their ${monsterAtk}! ${heroName} has ${hero[heroType].hitPoints} hit points remaining.`);
             } else {
-                console.log(`The ${monsters} missed ${heroName} with their ${monsterAtk}! ${heroName} still has ${hero[heroType].hitPoints} remaining.`);
+                console.log(`The ${monsters} missed ${heroName} with their ${monsterAtk}! ${heroName} still has ${hero[heroType].hitPoints} hit points remaining.`);
             }
         }
 
         let weapon = getRandom();
         let heroAtk = getAttackType(hero[heroType], weapon);
         let heroDmg = typeAttackDmg(hero[heroType], weapon);
+        // if statement prevents hero from attacking if <= 0 HP (could happen since monster goes first before break; in loop)
         if(hero[heroType].hitPoints > 0) {
+            // if statement determines whether hero hits or misses
             if(heroAtkRoll >= monster[monsterType].armorClass) {
                 monster[monsterType].health = heroDmg;
                 console.log(`${heroName} hit the ${monsters} for ${heroDmg} hit points with their ${heroAtk}! The ${monsters} has ${monster[monsterType].hitPoints} hit points remaining.`);
@@ -245,7 +261,7 @@ function monsterInitiative(hType, hName, mType, monst) {
                 console.log(`${heroName} missed the ${monsters} with their ${heroAtk}! The ${monsters} still has ${monster[monsterType].hitPoints} hit points remaining.`);
             }
         }
-
+        // if either hero or monster are <= 0 determines winner and break; from loop
         if((hero[heroType].hitPoints <= 0) || (monster[monsterType].hitPoints <= 0)) {
             if(hero[heroType].hitPoints > monster[monsterType].hitPoints) {
                 console.log(`${heroName} defeated the ${monsters} and has ${hero[heroType].hitPoints} hit points remaining!`);
@@ -257,6 +273,7 @@ function monsterInitiative(hType, hName, mType, monst) {
     }
 };
 
+// function called to initiate game play 
 function playGame(name) {
     let heroType = setHeroName(name)
     let heroName = hero[heroType].name;
